@@ -2,6 +2,9 @@ name: build-desktop
 
 # 一条命令产出 Windows / macOS / Linux 三端安装包
 # 触发：手动运行，或打 tag（如 desktop-v2.2.58）
+permissions:
+  contents: write
+
 on:
   workflow_dispatch:
   push:

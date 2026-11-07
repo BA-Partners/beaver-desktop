@@ -1,0 +1,64 @@
+name: build-desktop
+
+# 一条命令产出 Windows / macOS / Linux 三端安装包
+# 触发：手动运行，或打 tag（如 desktop-v2.2.58）
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - 'desktop-v*'
+
+jobs:
+  build:
+    name: ${{ matrix.name }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            name: linux
+            command: npx electron-builder --linux AppImage tar.gz
+          - os: windows-latest
+            name: windows
+            command: npx electron-builder --win nsis
+          - os: macos-latest
+            name: macos
+            command: npx electron-builder --mac dmg
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: beaver-desktop/package-lock.json
+
+      - name: 安装依赖
+        working-directory: beaver-desktop
+        run: npm ci
+
+      - name: 打包
+        working-directory: beaver-desktop
+        run: ${{ matrix.command }}
+        env:
+          # macOS 代码签名/公证需要以下 secrets；没有则产出未签名包（用户首次打开需手动放行）
+          CSC_LINK: ${{ secrets.MAC_CERT_P12_BASE64 }}
+          CSC_KEY_PASSWORD: ${{ secrets.MAC_CERT_PASSWORD }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: 上传产物
+        uses: actions/upload-artifact@v4
+        with:
+          name: beaver-desktop-${{ matrix.name }}
+          path: |
+            beaver-desktop/dist/*.AppImage
+            beaver-desktop/dist/*.tar.gz
+            beaver-desktop/dist/*.exe
+            beaver-desktop/dist/*.dmg
+          if-no-files-found: warn
+          retention-days: 14

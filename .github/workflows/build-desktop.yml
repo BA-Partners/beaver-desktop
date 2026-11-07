@@ -41,14 +41,40 @@ jobs:
       - name: 安装依赖
         run: npm ci
 
-      - name: 打包
+      # 只有仓库里配置了 MAC_CERT_P12_BASE64 才走签名分支，否则走未签名分支。
+      # 这样既不会重演"空 CSC_LINK 被当成证书路径"的失败，也能在拿到证书后零改代码生效。
+      - name: 检测签名证书
+        id: signing
+        shell: bash
+        env:
+          MAC_CERT: ${{ secrets.MAC_CERT_P12_BASE64 }}
+        run: |
+          if [ -n "$MAC_CERT" ]; then
+            echo "enabled=true" >> "$GITHUB_OUTPUT"
+            echo "已配置证书，本次将签名 + 公证"
+          else
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
+            echo "未配置证书，产出未签名安装包"
+          fi
+
+      - name: 打包（未签名）
+        if: steps.signing.outputs.enabled != 'true'
         run: ${{ matrix.command }} 2>&1 | tee build.log
         shell: bash
         env:
-          # 未配置证书时不要自动签名：否则 electron-builder 会把空的 CSC_LINK
-          # 当成证书路径，直接报 "<cwd> not a file"。
-          # 需要签名时在仓库 Secrets 里配置证书，并把下面改成 'true' + 传入 CSC_LINK。
           CSC_IDENTITY_AUTO_DISCOVERY: 'false'
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: 打包（签名 + 公证）
+        if: steps.signing.outputs.enabled == 'true'
+        run: ${{ matrix.command }} ${{ matrix.name == 'macos' && '-c.mac.notarize=true' || '' }} 2>&1 | tee build.log
+        shell: bash
+        env:
+          CSC_LINK: ${{ secrets.MAC_CERT_P12_BASE64 }}
+          CSC_KEY_PASSWORD: ${{ secrets.MAC_CERT_PASSWORD }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: 上传产物

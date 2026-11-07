@@ -1,7 +1,7 @@
 {
   "name": "beaver-desktop",
   "productName": "圆梦同行",
-  "version": "2.2.61",
+  "version": "2.2.62",
   "description": "圆梦同行桌面客户端（Electron 在线壳，加载 https://8811.info/app/）",
   "main": "src/main.js",
   "author": "Beaver IM Team",

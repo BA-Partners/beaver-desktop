@@ -45,12 +45,10 @@ jobs:
         run: ${{ matrix.command }} 2>&1 | tee build.log
         shell: bash
         env:
-          # macOS 代码签名/公证需要以下 secrets；没有则产出未签名包（用户首次打开需手动放行）
-          CSC_LINK: ${{ secrets.MAC_CERT_P12_BASE64 }}
-          CSC_KEY_PASSWORD: ${{ secrets.MAC_CERT_PASSWORD }}
-          APPLE_ID: ${{ secrets.APPLE_ID }}
-          APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
-          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          # 未配置证书时不要自动签名：否则 electron-builder 会把空的 CSC_LINK
+          # 当成证书路径，直接报 "<cwd> not a file"。
+          # 需要签名时在仓库 Secrets 里配置证书，并把下面改成 'true' + 传入 CSC_LINK。
+          CSC_IDENTITY_AUTO_DISCOVERY: 'false'
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: 上传产物

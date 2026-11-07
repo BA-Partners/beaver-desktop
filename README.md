@@ -1,147 +1,96 @@
-﻿# 🦫 Beaver IM - 海狸即时通讯桌面端
+# 圆梦同行 桌面客户端（Electron 在线壳）
 
-[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
-[![Version](https://img.shields.io/badge/version-2.1.1-blue.svg)](VERSION)
-[![Electron](https://img.shields.io/badge/Electron-31.x-green.svg)](https://electronjs.org/)
-[![Vue](https://img.shields.io/badge/Vue-3.x-brightgreen.svg)](https://vuejs.org/)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.x-blue.svg)](https://www.typescriptlang.org/)
-[![QQ群](https://img.shields.io/badge/QQ群-1013328597%2B-blue.svg)](https://qm.qq.com/q/82rbf7QBzO)
+> **实现方式说明**
+> 本仓库 `master` 分支是「网页轻壳」：Electron 加载 https://8811.info/app/ ，
+> 与网页版功能完全一致、随网页发版自动更新，三端安装包由 GitHub Actions 构建并发布 Release。
+>
+> 早期的官方原生桌面端（Electron + Vue3 + TS，v2.1.2）已存档在
+> 分支 `legacy/native-vue` 与 tag `native-vue-final-2.1.2`。
 
-> 🚀 **现代化桌面即时通讯应用** - 基于 Electron + Vue3 + TypeScript 构建，支持 Windows/macOS/Linux，提供完整的社交聊天体验
 
-**当前版本：[2.1.1](VERSION)**（以仓库根目录 [`VERSION`](VERSION) 文件为准，与 `package.json` 同步）
+把 PC 网页版 https://8811.info/app/ 打包成桌面应用程序。
 
-[English](README_EN.md) | [中文](README.md)
+技术栈：Electron 33 + electron-builder 25。**在线壳**模式——加载线上地址，
+网页版一发版，桌面端下次打开就是最新版，不需要重新分发安装包。
 
----
+## 目录
 
-## ✨ 核心特性
+```
+beaver-desktop/
+├── package.json          # 依赖 + electron-builder 配置（三平台打包参数）
+├── build/icon.png        # 应用图标（取自 App 的 logo，1000x1000）
+├── src/
+│   ├── main.js           # 主进程：窗口、权限、外链、兜底页、单实例、菜单
+│   ├── preload.js        # 只暴露 window.beaverDesktop（无 Node 能力）
+│   ├── fallback.html     # 断网/加载失败时的兜底页
+│   └── fallback.js
+└── dist/                 # 打包产物
+```
 
-- 🔐 **账号登录** - 密码登录、扫码登录
-- 💬 **即时通讯** - 私聊/群聊，支持文本、语音、Markdown、图片、视频、表情及转发回复
-- 👥 **群组能力** - 创建群聊、群助手（Webhook 机器人）
-- 🤝 **好友社交** - 好友申请与资料管理、朋友圈发布与互动
-- 📞 **音视频通话** - 私聊/群聊语音视频通话
-- 🖥️ **桌面体验** - 系统托盘、快捷键、区域截图、账号与存储设置
-- 🔄 **实时同步** - WebSocket 长连接，与移动端消息数据保持一致
+## 开发 / 运行
 
-## 🛠️ 技术栈
+```bash
+npm install                 # 首次
+npm start                   # 打开桌面客户端
+npm run smoke               # 无头冒烟：加载页面 + 截图，用于 CI/服务器验证
+```
 
-- **Electron** 31 - 跨平台桌面应用
-- **Vue 3** + **Vite** + **TypeScript** - 前端渲染与工程化
-- **Pinia** + **Vue Router** - 状态管理与路由
-- **SQLite** + **Drizzle ORM** - 本地消息与会话存储
-- **WebSocket** - 实时消息推送
-- **LiveKit** - 音视频通话
+`smoke` 会输出一行 JSON：`{"ok":true,"title":"圆梦同行","url":"...","screenshot":"/tmp/electron-smoke.png"}`。
 
-## 📱 功能展示
+## 打包
 
-### 🔐 用户认证
-<div align="center">
-  <img src="./static/desktop/登录-密码登录.png" width="300" alt="密码登录"/>
-  <img src="./static/desktop/登录-扫码登录.png" width="300" alt="扫码登录"/>
-</div>
+```bash
+npm run dist:linux          # AppImage + tar.gz
+npm run dist:win            # NSIS 安装包（需在 Windows 上执行）
+npm run dist:mac            # dmg（需在 macOS 上执行）
+```
 
-### 💬 聊天功能
-<div align="center">
-  <img src="./static/desktop/message.png" width="300" alt="消息主界面"/>
-  <img src="./static/desktop/聊天-语音.png" width="300" alt="语音消息"/>
-  <img src="./static/desktop/聊天-markdown.png" width="300" alt="Markdown 消息"/>
-  <img src="./static/desktop/private-detail.png" width="300" alt="私聊详情"/>
-  <img src="./static/desktop/group-detail.png" width="300" alt="群聊详情"/>
-  <img src="./static/desktop/image.png" width="300" alt="图片预览"/>
-  <img src="./static/desktop/video.png" width="300" alt="视频预览"/>
-  <img src="./static/desktop/emoji-store.png" width="300" alt="表情商店"/>
-  <img src="./static/desktop/emoji-favorites.png" width="300" alt="表情收藏"/>
-  <img src="./static/desktop/forward.png" width="300" alt="消息转发"/>
-  <img src="./static/desktop/reply.png" width="300" alt="消息回复"/>
-  <img src="./static/desktop/multi-select.png" width="300" alt="多选消息"/>
-  <img src="./static/desktop/call.png" width="300" alt="音视频通话"/>
-</div>
+> Windows / macOS 必须在对应系统（或对应 CI runner）上构建；
+> macOS 还需要开发者证书做签名 + notarize，否则用户首次打开会被 Gatekeeper 拦。
+> mac 图标请提供 1024×1024 的 `build/icon.png`（当前是 1000×1000，建议先放大）。
 
-### 👥 群聊功能
-<div align="center">
-  <img src="./static/desktop/create-group.png" width="300" alt="创建群聊"/>
-  <img src="./static/desktop/群助手-列表.png" width="300" alt="群助手列表"/>
-  <img src="./static/desktop/群助手-添加群助手.png" width="300" alt="添加群助手"/>
-</div>
+## 针对这个项目的处理
 
-### 👥 好友管理
-<div align="center">
-  <img src="./static/desktop/friend-list.png" width="300" alt="好友列表"/>
-  <img src="./static/desktop/friend-detail.png" width="300" alt="好友详情"/>
-  <img src="./static/desktop/friend-verify.png" width="300" alt="好友申请"/>
-</div>
+| 问题 | 处理 |
+| --- | --- |
+| 桌面双栏布局需要宽度 ≥1000 | `BrowserWindow.minWidth = 1000`，低于此值网页会退回手机单列 |
+| 语音/视频通话需要麦克风摄像头 | `setPermissionRequestHandler` 只对 `8811.info/app` 放行 `media/notifications/clipboard/display-capture` 等 |
+| 外链会跑出应用壳 | `will-navigate` + `setWindowOpenHandler` 一律交给系统浏览器 |
+| 断网白屏 | `did-fail-load` → 本地兜底页，可一键重试 |
+| 多开 | 单实例锁，第二次启动聚焦已有窗口 |
+| 渲染进程崩溃 | `render-process-gone` 自动重新加载一次 |
+| 安全 | `contextIsolation: true`、`nodeIntegration: false`、`sandbox: true`，preload 不暴露任何 Node API |
+| 未读数/标题 | `page-title-updated` 同步到窗口标题（任务栏可显示） |
 
-### 📸 朋友圈
-<div align="center">
-  <img src="./static/desktop/朋友圈-主页.png" width="300" alt="朋友圈主页"/>
-  <img src="./static/desktop/朋友圈-发布朋友圈.png" width="300" alt="发布朋友圈"/>
-  <img src="./static/desktop/朋友圈-详情内容.png" width="300" alt="动态详情"/>
-  <img src="./static/desktop/朋友圈-点赞.png" width="300" alt="点赞"/>
-  <img src="./static/desktop/朋友圈-评论.png" width="300" alt="评论"/>
-</div>
+## 已验证
 
-### 👤 个人中心
-<div align="center">
-  <img src="./static/desktop/profile-edit.jpg" width="300" alt="编辑个人资料"/>
-</div>
+- 1280×860 窗口加载线上应用，隐私同意页「同意并继续」可见可点；
+- 走完 隐私同意 → 登录 → 会话列表，桌面双栏外壳正常；
+- 打包后的 AppImage / tar.gz 里的二进制可正常运行（本机缺 libfuse2，
+  AppImage 需 `--appimage-extract` 后运行；装有 FUSE 的桌面可直接双击）。
 
-### ⚙️ 系统功能
-<div align="center">
-  <img src="./static/desktop/about.png" width="300" alt="关于页面"/>
-  <img src="./static/desktop/设置-检查更新.png" width="300" alt="检查更新"/>
-  <img src="./static/desktop/设置-快捷键.png" width="300" alt="快捷键设置"/>
-  <img src="./static/desktop/设置-账号与存储.png" width="300" alt="账号与存储"/>
-</div>
+## 托盘 / 未读角标 / 开机自启（已实现）
 
-## 🔗 相关项目
+- **关闭窗口 = 收进托盘**，托盘菜单可「显示主窗口 / 开机自启 / 退出」；托盘提示显示未读数。
+- **未读角标**：macOS 用 Dock 角标、Windows 用任务栏覆盖图标、Linux 用启动器角标。
+  数据来源两条：
+  1. 页面标题形如 `(3) 圆梦同行` 时自动解析；
+  2. 网页端主动调用 `window.beaverDesktop.setUnread(3)` 上报（推荐，preload 已暴露）。
 
-| 项目 | 仓库地址 | 说明 |
-|------|----------|------|
-| **beaver-server** | [GitHub](https://github.com/wsrh8888/beaver-server) \| [Gitee](https://gitee.com/dawwdadfrf/beaver-server) | 后端微服务 |
-| **beaver-flutter** | [GitHub](https://github.com/wsrh8888/beaver-flutter) \| [Gitee](https://gitee.com/dawwdadfrf/beaver-flutter) | 移动端（Flutter，推荐） |
-| **beaver-desktop** | [GitHub](https://github.com/wsrh8888/beaver-desktop) \| [Gitee](https://gitee.com/dawwdadfrf/beaver-desktop) | 桌面端（Electron）（本仓库） |
-| **beaver-manager** | [GitHub](https://github.com/wsrh8888/beaver-manager) \| [Gitee](https://gitee.com/dawwdadfrf/beaver-manager) | 后台管理系统 |
-| **beaver-open** | [GitHub](https://github.com/wsrh8888/beaver-open) \| [Gitee](https://gitee.com/dawwdadfrf/beaver-open) | 开放平台 |
-| **beaver-oauth** | [GitHub](https://github.com/wsrh8888/beaver-oauth) \| [Gitee](https://gitee.com/dawwdadfrf/beaver-oauth) | OAuth 授权登录 |
-## 📚 文档与帮助
+  **已完成接入**：`lib/core/desktop/unread_reporter.dart` 包在 MaterialApp builder 里，
+  监听 `ChatStore.totalUnreadCount + FriendVerifyStore.unreadCount + NotificationStore.momentUnread`，
+  变化时同时调用 `setUnread(total)` 且把标题写成 `(n) 圆梦同行`。
+  实测外壳日志：`[unread] 0` / `[unread] 3` / `[unread] 0`（手动 setUnread 验证清理也正常）。
+- **开机自启**：Windows/macOS 走 `setLoginItemSettings`，Linux 写
+  `~/.config/autostart/beaver-desktop.desktop`；自启时以 `--hidden` 启动（只在托盘）。
 
-- 📖 **详细文档**: [Beaver IM 文档](https://wsrh8888.github.io/beaver-docs/)
-- 📝 **更新记录**: [CHANGELOG.md](CHANGELOG.md)
-- 🎥 **视频教程**: [B站教程](https://www.bilibili.com/video/BV1HrrKYeEB4/)
-- 💬 **QQ群**:
-  - [1013328597](https://qm.qq.com/q/82rbf7QBzO) - 群一
-  - [1044762885](https://qm.qq.com/q/82rbf7QBzO) - 群二
-  - [1003121259](https://qm.qq.com/q/82rbf7QBzO) - 群三
+## 三端 CI
 
-## ⭐ 支持项目
+`.github/workflows/build-desktop.yml`：手动触发或打 `desktop-v*` tag，
+在 ubuntu/windows/macos 上分别产出 AppImage+tar.gz / exe / dmg 并作为 artifact 上传。
+macOS 签名公证需配置 secrets（见 workflow 内注释）。
 
-如果这个项目对你有帮助，请给我们一个 ⭐ Star！
+## 还没做（按需）
 
-## ☕ 请作者喝杯茶
-
-如果这个项目对你有帮助，欢迎请作者喝杯茶 ☕
-
-<div align="center">
-  <img src="./static/sponsor/wechat.jpg" width="200" alt="微信赞助码"/>
-  <img src="./static/sponsor/zhifubao.jpg" width="200" alt="支付宝赞助码"/>
-</div>
-
-## 📄 开源协议与免责声明
-
-本项目基于 [MIT](LICENSE) 协议开源，详见 [LICENSE](LICENSE)。
-
-**使用要点（摘要）：**
-
-- 闭源自用商用、二次开源均可免费，但须保留根目录 `LICENSE`，上线前端须有「关于」署名（基于海狸 IM + 仓库地址）
-- 闭源交付第三方、去掉署名、对外 SaaS 收费等，请采购商业授权（书面合同）
-- 无论是否付费，**不得删除或篡改 `LICENSE`**
-
-完整免责与署名要求：[LEGAL.md](LEGAL.md)  
-商业授权产品线与报价：[版权与商业授权](https://wsrh8888.github.io/beaver-docs/community/license.html)  
-联系：[751135385@qq.com](mailto:751135385@qq.com)
-
-## ⭐ Star历史
-
-[![Star History Chart](https://api.star-history.com/svg?repos=wsrh8888/beaver-desktop&type=Date)](https://star-history.com/#wsrh8888/beaver-desktop&Date)
+- 自动更新（electron-updater）——在线壳模式一般不需要；
+- Windows/macOS 代码签名与分发渠道。

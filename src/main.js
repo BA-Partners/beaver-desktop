@@ -221,6 +221,32 @@ function setAutoLaunch(enable) {
   }
 }
 
+/**
+ * 每次外壳版本变化后清一次 HTTP 缓存。
+ *
+ * 桌面壳加载的是线上 Web 包（https://8811.info/app/），如果 Chromium 手里
+ * 留着旧的 main.dart.js，就会出现「网页版已经修好了、桌面端还是老界面/老 Bug」。
+ * 服务端已经对 /app/ 下所有资源发了 Cache-Control: no-cache（会回源校验），
+ * 这里再兜一次：升级外壳后清掉历史缓存。同版本重复启动不会清，避免每次启动都重下。
+ */
+async function refreshWebCacheIfNeeded() {
+  const markerPath = path.join(app.getPath('userData'), 'web-cache-version.txt');
+  try {
+    let cachedVersion = '';
+    try {
+      cachedVersion = fs.readFileSync(markerPath, 'utf8').trim();
+    } catch (_) {
+      cachedVersion = '';
+    }
+    if (cachedVersion === app.getVersion()) return;
+    await session.defaultSession.clearCache();
+    fs.writeFileSync(markerPath, app.getVersion());
+    console.log('[cache] 已清理 HTTP 缓存（外壳版本', app.getVersion(), '）');
+  } catch (err) {
+    console.log('[cache] 清理缓存失败：', String(err));
+  }
+}
+
 function installSessionPolicy() {
   const ses = session.defaultSession;
 
@@ -454,8 +480,9 @@ if (!app.requestSingleInstanceLock()) {
     }
   });
 
-  app.whenReady().then(() => {
+  app.whenReady().then(async () => {
     app.setAppUserModelId('com.example.beaver.desktop');
+    await refreshWebCacheIfNeeded();
     installSessionPolicy();
     buildMenu();
     createWindow();

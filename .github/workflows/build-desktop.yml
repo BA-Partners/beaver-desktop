@@ -27,7 +27,12 @@ jobs:
             command: npx electron-builder --win nsis
           - os: macos-latest
             name: macos
-            command: npx electron-builder --mac dmg
+            command: npx electron-builder --mac dmg zip
+          # 下载页给 Intel 机型提供的 .zip 需要 x64 产物；
+          # macos-latest 现在是 arm64 runner，所以单独加一条交叉编译 x64 的任务。
+          - os: macos-latest
+            name: macos-intel
+            command: npx electron-builder --mac zip --x64
 
     steps:
       - uses: actions/checkout@v4

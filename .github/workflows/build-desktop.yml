@@ -21,18 +21,18 @@ jobs:
         include:
           - os: ubuntu-latest
             name: linux
-            command: npx electron-builder --linux AppImage tar.gz
+            command: npx electron-builder --linux AppImage tar.gz --publish never
           - os: windows-latest
             name: windows
-            command: npx electron-builder --win nsis
+            command: npx electron-builder --win nsis zip --publish never
           - os: macos-latest
             name: macos
-            command: npx electron-builder --mac dmg zip
+            command: npx electron-builder --mac dmg zip --publish never
           # 下载页给 Intel 机型提供的 .zip 需要 x64 产物；
           # macos-latest 现在是 arm64 runner，所以单独加一条交叉编译 x64 的任务。
           - os: macos-latest
             name: macos-intel
-            command: npx electron-builder --mac zip --x64
+            command: npx electron-builder --mac zip --x64 --publish never
 
     steps:
       - uses: actions/checkout@v4
@@ -81,6 +81,10 @@ jobs:
           APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: 列出产物
+        shell: bash
+        run: ls -la dist || true
 
       - name: 上传产物
         uses: actions/upload-artifact@v4
